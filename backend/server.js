@@ -7,9 +7,13 @@ const PORT = process.env.PORT || 3000;
 
 // Import routes
 const webhookRoutes = require('./src/routes/webhook');
+const reviewRoutes = require('./src/routes/reviewRoutes');
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: 'http://localhost:5173',
+  credentials: true
+}));
 app.use(express.json());
 
 // Health check route
@@ -23,6 +27,7 @@ app.get('/', (req, res) => {
 
 // Routes
 app.use('/webhook', webhookRoutes);
+app.use('/api/reviews', reviewRoutes);
 
 // Start server
 app.listen(PORT, () => {
