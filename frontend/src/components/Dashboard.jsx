@@ -395,7 +395,7 @@ function Dashboard() {
         </div>
       </div>
 
-      {/* Custom Scrollbar Styles */}
+      {/* Custom Scrollbar Style */}
       <style>{`
         .custom-scrollbar::-webkit-scrollbar {
           width: 6px;
@@ -411,7 +411,7 @@ function Dashboard() {
           background: rgba(255, 255, 255, 0.1);
         }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: rgba(156, 163, 175, 0.5);
+          background: rgba(156, 163, 175, 0.5); 
         }
         .dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
           background: rgba(255, 255, 255, 0.2);
