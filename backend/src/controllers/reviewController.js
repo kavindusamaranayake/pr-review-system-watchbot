@@ -111,6 +111,7 @@ exports.approveReview = async (req, res) => {
           });
 
           githubCommentPosted = true;
+          console.log('✅ Review Approved & Posted for PR:', reviewId);
         } else {
           githubError = 'Invalid PR link format';
         }
@@ -168,22 +169,57 @@ exports.rejectReview = async (req, res) => {
       });
     }
 
-    // Update status to REJECTED (or delete if preferred)
+    // Update status to REJECTED
     const updatedReview = await prisma.review.update({
       where: { id: reviewId },
       data: { status: 'REJECTED' }
     });
 
-    // Alternative: Delete the review entirely
-    // await prisma.review.delete({
-    //   where: { id: reviewId }
-    // });
+    // Post REQUEST_CHANGES review to GitHub if token is available
+    let githubReviewPosted = false;
+    let githubError = null;
+
+    if (process.env.GITHUB_TOKEN) {
+      try {
+        // Extract owner, repo, and PR number from prLink
+        const prUrlMatch = review.prLink.match(/github\.com\/([^\/]+)\/([^\/]+)\/pull\/(\d+)/);
+        
+        if (prUrlMatch) {
+          const [, owner, repo, pull_number] = prUrlMatch;
+          
+          const octokit = new Octokit({
+            auth: process.env.GITHUB_TOKEN
+          });
+
+          // Submit a review with REQUEST_CHANGES event
+          await octokit.rest.pulls.createReview({
+            owner,
+            repo,
+            pull_number: parseInt(pull_number),
+            event: 'REQUEST_CHANGES',
+            body: `⛔ Instructor Rejected this PR.\n\nPlease check the requirements and resubmit.`
+          });
+
+          githubReviewPosted = true;
+          console.log('❌ Review Rejected for PR:', reviewId);
+        } else {
+          githubError = 'Invalid PR link format';
+        }
+      } catch (error) {
+        console.error('Error posting rejection to GitHub:', error);
+        githubError = error.message;
+      }
+    }
 
     // Return success response
     res.status(200).json({
       success: true,
       message: 'Review rejected successfully',
-      data: updatedReview
+      data: updatedReview,
+      github: {
+        reviewPosted: githubReviewPosted,
+        error: githubError
+      }
     });
   } catch (error) {
     console.error('Error rejecting review:', error);
