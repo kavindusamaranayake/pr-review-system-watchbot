@@ -10,6 +10,7 @@ function Dashboard() {
   const [approvingId, setApprovingId] = useState(null);
   const [rejectingId, setRejectingId] = useState(null);
   const [selectedReview, setSelectedReview] = useState(null);
+  const [processedCount, setProcessedCount] = useState(0);
 
   useEffect(() => {
     fetchReviews();
@@ -21,6 +22,7 @@ function Dashboard() {
       setError(null);
       const data = await getPendingReviews();
       setReviews(data.data || []);
+      setProcessedCount(data.processedCount || 0);
     } catch (err) {
       setError('Failed to fetch reviews. Make sure the backend is running on port 3000.');
       console.error(err);
@@ -47,6 +49,7 @@ function Dashboard() {
         
         setReviews(reviews.filter(review => review.id !== reviewId));
         setSelectedReview(null);
+        setProcessedCount(prev => prev + 1);
       }
     } catch (err) {
       alert('Failed to approve review: ' + (err.response?.data?.message || err.message));
@@ -71,6 +74,7 @@ function Dashboard() {
         // Remove from list
         setReviews(reviews.filter(review => review.id !== reviewId));
         setSelectedReview(null);
+        setProcessedCount(prev => prev + 1);
       }
     } catch (err) {
       alert('Failed to reject review: ' + (err.response?.data?.message || err.message));
@@ -179,7 +183,7 @@ function Dashboard() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs text-gray-500 dark:text-gray-500 uppercase tracking-wider">Total Processed</p>
-                <p className="text-2xl font-semibold text-gray-900 dark:text-white mt-1">--</p>
+                <p className="text-2xl font-semibold text-gray-900 dark:text-white mt-1">{processedCount}</p>
               </div>
               <div className="w-10 h-10 bg-gray-100 dark:bg-white/5 rounded-lg flex items-center justify-center">
                 <svg className="w-5 h-5 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -302,9 +306,9 @@ function Dashboard() {
                   {/* AI Feedback Terminal - VS Code Style */}
                   <div className="mb-5">
                     <label className="text-xs text-gray-500 dark:text-gray-500 uppercase tracking-wider block mb-2">AI Analysis</label>
-                    <div className="bg-gray-100 dark:bg-[#0d1117] border border-gray-200 dark:border-white/10 rounded-md p-4 font-mono text-xs overflow-auto max-h-96">
-                      <div className="text-gray-500 dark:text-gray-600 mb-3">$ ai-review --analyze</div>
-                      <pre className="text-gray-800 dark:text-gray-300 whitespace-pre-wrap leading-relaxed">
+                    <div className="bg-white dark:bg-[#0d1117] border border-gray-200 dark:border-white/10 rounded-md p-4 font-mono text-xs overflow-auto max-h-96">
+                      <div className="text-gray-400 dark:text-gray-600 mb-3">$ ai-review --analyze</div>
+                      <pre className="text-gray-900 dark:text-gray-300 whitespace-pre-wrap leading-relaxed">
                         {selectedReview.feedbackContent || selectedReview.aiFeedback}
                       </pre>
                     </div>

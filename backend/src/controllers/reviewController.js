@@ -4,7 +4,7 @@ const { Octokit } = require('@octokit/rest');
 const prisma = new PrismaClient();
 
 /**
- * Get all pending reviews
+ * Get all pending reviews with stats
  * @route GET /api/reviews
  */
 exports.getPendingReviews = async (req, res) => {
@@ -18,9 +18,19 @@ exports.getPendingReviews = async (req, res) => {
       }
     });
 
+    // Get count of processed reviews (APPROVED + REJECTED)
+    const processedCount = await prisma.review.count({
+      where: {
+        status: {
+          in: ['APPROVED', 'REJECTED']
+        }
+      }
+    });
+
     res.status(200).json({
       success: true,
       count: pendingReviews.length,
+      processedCount: processedCount,
       data: pendingReviews
     });
   } catch (error) {
