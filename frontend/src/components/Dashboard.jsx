@@ -259,9 +259,15 @@ function Dashboard() {
           {/* Review Inspector Panel */}
           <div className="lg:col-span-2">
             {selectedReview ? (
-              <div className="bg-gray-900 border border-white/10 rounded-lg overflow-hidden">
+              <div className="bg-white dark:bg-gray-900 
+                border border-gray-200 dark:border-white/10 
+                rounded-lg overflow-hidden transition-colors">
+
                 {/* Header */}
-                <div className="bg-gray-800/50 px-5 py-3 border-b border-white/10">
+                <div className="bg-gray-100 dark:bg-gray-800/50 
+                px-5 py-3 
+                border-b border-gray-200 dark:border-white/10 
+                transition-colors">
                   <div className="flex items-center justify-between">
                     <h2 className="text-sm font-medium text-gray-300">Code Inspector</h2>
                     <button
