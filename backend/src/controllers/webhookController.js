@@ -3,7 +3,7 @@ const reviewService = require('../services/reviewService');
 const prisma = require('../config/database');
 
 /**
- * Webhook Controller - Handles GitHub webhook event
+ * Webhook Controller - Handles GitHub webhook even
  */
 class WebhookController {
   /**
