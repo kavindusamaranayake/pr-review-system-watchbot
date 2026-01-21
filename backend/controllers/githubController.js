@@ -191,6 +191,66 @@ const getAllRepos = async (req, res) => {
 };
 
 /**
+ * Get all branches for a specific repository
+ * @route GET /api/github/branches/:owner/:repo
+ */
+const getBranches = async (req, res) => {
+  try {
+    const { owner, repo } = req.params;
+
+    console.log(`[GitHub] Fetching branches for ${owner}/${repo}`);
+
+    if (!process.env.GITHUB_TOKEN) {
+      console.warn('⚠️  GitHub token not configured.');
+      return res.status(200).json({
+        success: true,
+        source: 'mock',
+        data: [
+          { name: 'main', protected: true },
+          { name: 'module-1', protected: false },
+          { name: 'module-2', protected: false },
+          { name: 'module-3', protected: false }
+        ]
+      });
+    }
+
+    // Fetch branches from GitHub
+    const { data: branches } = await octokit.repos.listBranches({
+      owner,
+      repo,
+      per_page: 100
+    });
+
+    const transformedBranches = branches.map(branch => ({
+      name: branch.name,
+      protected: branch.protected
+    }));
+
+    res.status(200).json({
+      success: true,
+      source: 'github',
+      count: transformedBranches.length,
+      data: transformedBranches
+    });
+
+  } catch (error) {
+    console.error('❌ Error fetching branches:', error.message);
+    
+    // Return mock data if API fails
+    return res.status(200).json({
+      success: true,
+      source: 'mock',
+      data: [
+        { name: 'main', protected: true },
+        { name: 'module-1', protected: false },
+        { name: 'module-2', protected: false }
+      ],
+      warning: 'GitHub API unavailable. Showing sample data.'
+    });
+  }
+};
+
+/**
  * Health check for GitHub API connection
  * @route GET /api/github/health
  */
@@ -227,5 +287,6 @@ const checkGitHubHealth = async (req, res) => {
 module.exports = {
   getActivePRs,
   getAllRepos,
+  getBranches,
   checkGitHubHealth
 };

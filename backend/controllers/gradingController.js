@@ -9,22 +9,23 @@ const module02Handler = require('../grading-engine/module-handlers/module02');
 /**
  * Main grading endpoint handler
  * POST /api/grade
- * Body: { repoUrl, moduleNumber, studentName }
+ * Body: { repoUrl, branchName, customInstructions, studentName }
  */
 async function gradeSubmission(req, res) {
   let clonedPath = null;
   
   try {
     // Step 1: Extract and validate request data
-    const { repoUrl, moduleNumber, studentName } = req.body;
+    const { repoUrl, branchName, customInstructions, studentName } = req.body;
     
     console.log(`[GradingController] Received grading request:`);
-    console.log(`  Student: ${studentName}`);
-    console.log(`  Module: ${moduleNumber}`);
+    console.log(`  Student: ${studentName || 'N/A'}`);
+    console.log(`  Branch: ${branchName || 'default'}`);
     console.log(`  Repository: ${repoUrl}`);
+    console.log(`  Custom Instructions: ${customInstructions ? 'Yes' : 'No'}`);
     
     // Validate required fields
-    const validationError = validateRequestData(repoUrl, moduleNumber, studentName);
+    const validationError = validateRequestData(repoUrl, branchName, customInstructions);
     if (validationError) {
       return res.status(400).json({
         success: false,
@@ -32,19 +33,20 @@ async function gradeSubmission(req, res) {
       });
     }
     
-    // Step 2: Clone the repository
+    // Step 2: Clone the repository with specific branch
     console.log('[GradingController] Cloning repository...');
-    clonedPath = await cloneRepo(repoUrl, studentName);
+    const submitterName = studentName || 'submission';
+    clonedPath = await cloneRepo(repoUrl, submitterName, branchName);
     
-    // Step 3: Route to appropriate module handler
-    console.log(`[GradingController] Running Module ${moduleNumber} grading...`);
-    const gradingResults = await routeToModuleHandler(moduleNumber, clonedPath);
+    // Step 3: Perform AI-based grading with custom instructions
+    console.log(`[GradingController] Running AI-powered grading...`);
+    const gradingResults = await performCustomGrading(clonedPath, customInstructions, branchName);
     
     // Step 4: Prepare response
     const response = {
       success: true,
-      student: studentName,
-      moduleNumber: moduleNumber,
+      student: studentName || 'Unknown',
+      branch: branchName,
       repositoryUrl: repoUrl,
       results: gradingResults,
       summary: {
@@ -91,11 +93,11 @@ async function gradeSubmission(req, res) {
 /**
  * Validates the request data
  * @param {string} repoUrl - GitHub repository URL
- * @param {number} moduleNumber - Module number
- * @param {string} studentName - Student name
+ * @param {string} branchName - Branch name
+ * @param {string} customInstructions - Custom grading instructions
  * @returns {string|null} - Error message or null if valid
  */
-function validateRequestData(repoUrl, moduleNumber, studentName) {
+function validateRequestData(repoUrl, branchName, customInstructions) {
   if (!repoUrl || typeof repoUrl !== 'string') {
     return 'Invalid or missing repoUrl';
   }
@@ -104,19 +106,113 @@ function validateRequestData(repoUrl, moduleNumber, studentName) {
     return 'Invalid GitHub URL format';
   }
   
-  if (!moduleNumber || typeof moduleNumber !== 'number') {
-    return 'Invalid or missing moduleNumber';
+  if (!branchName || typeof branchName !== 'string' || branchName.trim() === '') {
+    return 'Invalid or missing branchName';
   }
   
-  if (!studentName || typeof studentName !== 'string' || studentName.trim() === '') {
-    return 'Invalid or missing studentName';
+  if (!customInstructions || typeof customInstructions !== 'string' || customInstructions.trim() === '') {
+    return 'Invalid or missing customInstructions';
   }
   
   return null;
 }
 
 /**
- * Routes the grading request to the appropriate module handler
+ * Performs custom AI-based grading using instructor-provided rules
+ * @param {string} repoPath - Path to the cloned repository
+ * @param {string} customInstructions - Custom grading criteria from instructor
+ * @param {string} branchName - Branch being graded
+ * @returns {Promise<Object>} - Grading results
+ */
+async function performCustomGrading(repoPath, customInstructions, branchName) {
+  const { analyzeCodeWithCustomInstructions } = require('../grading-engine/utils/aiHelper');
+  const fs = require('fs-extra');
+  const path = require('path');
+  
+  try {
+    // Read all relevant code files from the repository
+    const codeFiles = await findCodeFiles(repoPath);
+    
+    if (codeFiles.length === 0) {
+      throw new Error('No code files found in the repository');
+    }
+    
+    // Concatenate code content for analysis
+    let combinedCode = '';
+    for (const file of codeFiles) {
+      const content = await fs.readFile(file, 'utf-8');
+      combinedCode += `\n\n// File: ${path.relative(repoPath, file)}\n${content}`;
+    }
+    
+    // Perform AI analysis with custom instructions
+    const aiResult = await analyzeCodeWithCustomInstructions(
+      combinedCode,
+      customInstructions,
+      branchName
+    );
+    
+    return {
+      moduleName: `Branch: ${branchName}`,
+      totalScore: aiResult.score,
+      maxTotalScore: 100,
+      codeQuality: {
+        score: aiResult.score,
+        maxScore: 100,
+        feedback: aiResult.feedback
+      },
+      completeness: {
+        score: aiResult.score > 60 ? 40 : Math.round(aiResult.score * 0.4),
+        maxScore: 40,
+        passed: aiResult.passed || [],
+        errors: aiResult.errors || []
+      },
+      filesAnalyzed: codeFiles.length,
+      customCriteria: customInstructions.substring(0, 200) + '...'
+    };
+    
+  } catch (error) {
+    console.error('[GradingController] Custom grading error:', error);
+    throw error;
+  }
+}
+
+/**
+ * Finds all code files in a repository
+ * @param {string} repoPath - Path to repository
+ * @returns {Promise<Array>} - Array of file paths
+ */
+async function findCodeFiles(repoPath) {
+  const fs = require('fs-extra');
+  const path = require('path');
+  
+  const codeExtensions = ['.js', '.jsx', '.ts', '.tsx', '.py', '.java', '.sol', '.rs', '.go'];
+  const ignoreDirs = ['node_modules', '.git', 'dist', 'build', '__pycache__', 'target'];
+  
+  const files = [];
+  
+  async function scan(dir) {
+    const entries = await fs.readdir(dir, { withFileTypes: true });
+    
+    for (const entry of entries) {
+      const fullPath = path.join(dir, entry.name);
+      
+      if (entry.isDirectory() && !ignoreDirs.includes(entry.name)) {
+        await scan(fullPath);
+      } else if (entry.isFile()) {
+        const ext = path.extname(entry.name);
+        if (codeExtensions.includes(ext)) {
+          files.push(fullPath);
+        }
+      }
+    }
+  }
+  
+  await scan(repoPath);
+  return files;
+}
+
+/**
+ * Routes the grading request to the appropriate module handler (DEPRECATED - kept for backward compatibility)
  * @param {number} moduleNumber - The module number
  * @param {string} repoPath - Path to the cloned repository
  * @returns {Promise<Object>} - Grading results
@@ -162,7 +258,8 @@ function healthCheck(req, res) {
     success: true,
     service: 'Automated Grading Assistant',
     status: 'operational',
-    availableModules: [2], // Update as more modules are added
+    mode: 'Dynamic Rule-Based Engine',
+    features: ['Branch-based grading', 'Custom instructions', 'AI-powered analysis'],
     timestamp: new Date().toISOString()
   });
 }

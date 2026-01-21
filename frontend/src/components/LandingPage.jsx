@@ -1,9 +1,12 @@
 import { useNavigate } from 'react-router-dom';
+import { useAuthState } from 'react-firebase-hooks/auth';
+import { auth } from '../firebase';
 import { Zap, Bot, BarChart3, ArrowRight, CheckCircle2 } from 'lucide-react';
 import metanaLogo from '../assets/images.png';
 
 function LandingPage() {
   const navigate = useNavigate();
+  const [user, loading] = useAuthState(auth);
 
   const features = [
     {
@@ -83,15 +86,31 @@ function LandingPage() {
               </div>
             </div>
 
-            {/* Sign In Button */}
-            <button 
-  onClick={() => navigate('/login')}
-  className="px-6 py-2 bg-[#ccf621] text-gray-900 font-semibold rounded-lg 
-             hover:bg-[#b7e81d] 
-             transition-all duration-200"
->
-  Sign In
-</button>
+            {/* Dynamic Auth Button */}
+            {loading ? (
+              <div className="px-6 py-2 bg-gray-200 text-gray-500 font-semibold rounded-lg animate-pulse">
+                Loading...
+              </div>
+            ) : user ? (
+              <button 
+                onClick={() => navigate('/dashboard')}
+                className="px-6 py-2 bg-[#ccf621] text-gray-900 font-semibold rounded-lg 
+                           hover:bg-[#b7e81d] 
+                           transition-all duration-200 flex items-center gap-2"
+              >
+                Go to Dashboard
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            ) : (
+              <button 
+                onClick={() => navigate('/login')}
+                className="px-6 py-2 bg-[#ccf621] text-gray-900 font-semibold rounded-lg 
+                           hover:bg-[#b7e81d] 
+                           transition-all duration-200"
+              >
+                Sign In
+              </button>
+            )}
           </div>
         </div>
       </nav>

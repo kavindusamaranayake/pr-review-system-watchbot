@@ -4,15 +4,16 @@ import { auth } from './firebase';
 import Home from './components/Home';
 import Dashboard from './components/Dashboard';
 import GradingAssistant from './components/GradingAssistant';
-import StudentDashboard from './components/StudentDashboard';
 import Login from './components/Login';
 import LandingPage from './components/LandingPage';
+import Unauthorized from './components/Unauthorized';
 import Layout from './components/Layout';
 import './App.css';
 
 // Instructor emails with full access
 export const INSTRUCTOR_EMAILS = [
   'karindragimhan49@gmail.com',
+  'karindra@gmail.com',
   'thinal@metana.io',
 ];
 
@@ -50,38 +51,12 @@ function InstructorRoute({ children }) {
   }
   
   if (!isInstructor(user.email)) {
-    console.log("❌ Not an instructor, redirecting to /student-dashboard");
-    return <Navigate to="/student-dashboard" replace />;
+    console.log("❌ Not an instructor, redirecting to /unauthorized");
+    return <Navigate to="/unauthorized" replace />;
   }
   
   console.log("✅ Instructor access granted");
   return <Layout>{children}</Layout>;
-}
-
-// Student-Only Route Guard
-function StudentRoute({ children }) {
-  const [user, loading] = useAuthState(auth);
-
-  console.log("🔐 StudentRoute Check:", { 
-    user: user?.email, 
-    loading, 
-    isInstructor: user ? isInstructor(user.email) : false 
-  });
-
-  if (loading) return <LoadingScreen />;
-  
-  if (!user) {
-    console.log("❌ No user, redirecting to /login");
-    return <Navigate to="/login" replace />;
-  }
-  
-  if (isInstructor(user.email)) {
-    console.log("❌ Instructor detected, redirecting to /dashboard");
-    return <Navigate to="/dashboard" replace />;
-  }
-  
-  console.log("✅ Student access granted");
-  return children;
 }
 
 function App() {
@@ -91,6 +66,7 @@ function App() {
         {/* Public Routes */}
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/unauthorized" element={<Unauthorized />} />
         
         {/* Instructor-Only Routes (with Layout/Sidebar) */}
         <Route 
@@ -115,16 +91,6 @@ function App() {
             <InstructorRoute>
               <GradingAssistant />
             </InstructorRoute>
-          } 
-        />
-        
-        {/* Student-Only Route (no sidebar) */}
-        <Route 
-          path="/student-dashboard" 
-          element={
-            <StudentRoute>
-              <StudentDashboard />
-            </StudentRoute>
           } 
         />
         

@@ -11,6 +11,132 @@ const openai = new OpenAI({
 });
 
 /**
+ * Analyzes code using OpenAI's GPT model with custom instructor-provided criteria
+ * @param {string} codeSnippet - The code to analyze
+ * @param {string} customInstructions - Custom grading criteria from instructor
+ * @param {string} courseName - Detected course name for context
+ * @returns {Promise<Object>} - Object with score (0-100), feedback, passed[], and errors[]
+ */
+async function analyzeCodeWithCustomInstructions(codeSnippet, customInstructions, courseName = 'General') {
+  try {
+    console.log('[AIHelper] Starting custom code analysis...');
+    console.log(`[AIHelper] Course: ${courseName}`);
+    
+    // Validate inputs
+    if (!codeSnippet || typeof codeSnippet !== 'string') {
+      throw new Error('Invalid code snippet provided');
+    }
+    
+    if (!customInstructions || typeof customInstructions !== 'string') {
+      throw new Error('Invalid custom instructions provided');
+    }
+    
+    if (!process.env.OPENAI_API_KEY) {
+      throw new Error('OpenAI API key not configured');
+    }
+    
+    // Prepare the enhanced system prompt
+    const systemPrompt = `You are a Senior Code Reviewer and Grading Assistant for ${courseName}.
+
+The instructor has provided specific grading criteria that you MUST follow strictly.
+
+**INSTRUCTOR'S CUSTOM GRADING RULES:**
+${customInstructions}
+
+**YOUR TASK:**
+1. Analyze the submitted code against the instructor's specific criteria above
+2. Award a score from 0-100 based on how well the code meets these requirements
+3. Provide detailed feedback explaining what was found and what's missing
+4. List specific items that passed the criteria
+5. List specific errors or missing requirements
+
+**OUTPUT FORMAT (JSON):**
+{
+  "score": <number 0-100>,
+  "feedback": "<detailed paragraph explaining your assessment>",
+  "passed": ["<specific requirement that was met>", "..."],
+  "errors": ["<specific issue or missing requirement>", "..."]
+}
+
+Be strict but fair. Focus on the instructor's criteria, not generic best practices unless specified.`;
+
+    const userPrompt = `
+Code to analyze:
+\`\`\`
+${codeSnippet.substring(0, 8000)} 
+\`\`\`
+
+Grade this code based on the instructor's criteria provided in the system prompt.
+Return ONLY the JSON object, no additional text.
+`;
+
+    console.log('[AIHelper] Sending request to OpenAI...');
+    
+    // Call OpenAI API
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4o',
+      messages: [
+        {
+          role: 'system',
+          content: systemPrompt
+        },
+        {
+          role: 'user',
+          content: userPrompt
+        }
+      ],
+      temperature: 0.3,
+      max_tokens: 1500,
+      response_format: { type: 'json_object' }
+    });
+    
+    // Extract and parse the response
+    const aiResponse = response.choices[0].message.content;
+    console.log('[AIHelper] Received response from OpenAI');
+    
+    let parsedResponse;
+    try {
+      parsedResponse = JSON.parse(aiResponse);
+    } catch (parseError) {
+      console.error('[AIHelper] Failed to parse AI response:', parseError);
+      throw new Error('AI returned invalid JSON format');
+    }
+    
+    // Validate response structure
+    if (typeof parsedResponse.score !== 'number') {
+      throw new Error('AI response missing score field');
+    }
+    
+    // Ensure score is within bounds
+    const score = Math.max(0, Math.min(100, Math.round(parsedResponse.score)));
+    
+    console.log(`[AIHelper] Custom analysis complete. Score: ${score}/100`);
+    
+    return {
+      score: score,
+      feedback: parsedResponse.feedback || 'No feedback provided',
+      passed: parsedResponse.passed || [],
+      errors: parsedResponse.errors || [],
+      model: response.model,
+      tokensUsed: response.usage.total_tokens
+    };
+    
+  } catch (error) {
+    console.error('[AIHelper] Error during custom code analysis:', error.message);
+    
+    // Return a safe default response on error
+    return {
+      score: 0,
+      feedback: `AI analysis failed: ${error.message}. Please check your OpenAI API configuration.`,
+      passed: [],
+      errors: [`Analysis Error: ${error.message}`],
+      error: true,
+      errorMessage: error.message
+    };
+  }
+}
+
+/**
  * Analyzes code using OpenAI's GPT model
  * @param {string} codeSnippet - The code to analyze
  * @param {string} criteria - The criteria/prompt for analysis
@@ -189,6 +315,7 @@ async function checkAPIHealth() {
 
 module.exports = {
   analyzeCode,
+  analyzeCodeWithCustomInstructions,
   analyzeHTML,
   analyzeCSS,
   analyzeJavaScript,

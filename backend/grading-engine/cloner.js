@@ -11,10 +11,11 @@ const path = require('path');
  * Clones a GitHub repository to a temporary local directory
  * @param {string} repoUrl - The GitHub repository URL
  * @param {string} studentName - Student identifier for folder naming
+ * @param {string} branchName - Optional branch name to clone (defaults to repo's default branch)
  * @returns {Promise<string>} - Path to the cloned repository
  * @throws {Error} - If cloning fails
  */
-async function cloneRepo(repoUrl, studentName) {
+async function cloneRepo(repoUrl, studentName, branchName = null) {
   try {
     // Create timestamp for unique folder naming
     const timestamp = Date.now();
@@ -27,11 +28,20 @@ async function cloneRepo(repoUrl, studentName) {
     await fs.ensureDir(path.join(process.cwd(), 'temp_submissions'));
     
     console.log(`[Cloner] Cloning repository: ${repoUrl}`);
+    if (branchName) {
+      console.log(`[Cloner] Target branch: ${branchName}`);
+    }
     console.log(`[Cloner] Target path: ${tempPath}`);
     
     // Initialize simple-git and clone the repository
     const git = simpleGit();
-    await git.clone(repoUrl, tempPath);
+    
+    // Clone with specific branch if provided
+    if (branchName) {
+      await git.clone(repoUrl, tempPath, ['--branch', branchName, '--single-branch']);
+    } else {
+      await git.clone(repoUrl, tempPath);
+    }
     
     console.log(`[Cloner] Successfully cloned repository to: ${tempPath}`);
     

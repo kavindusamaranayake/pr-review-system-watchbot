@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { getActivePRs, getAllRepos, checkGitHubHealth } = require('../controllers/githubController');
+const { getActivePRs, getAllRepos, getBranches, checkGitHubHealth } = require('../controllers/githubController');
 
 /**
  * @route   GET /api/github/prs
@@ -15,6 +15,13 @@ router.get('/prs', getActivePRs);
  * @access  Public
  */
 router.get('/repos', getAllRepos);
+
+/**
+ * @route   GET /api/github/branches/:owner/:repo
+ * @desc    Get all branches for a specific repository
+ * @access  Public
+ */
+router.get('/branches/:owner/:repo', getBranches);
 
 /**
  * @route   GET /api/github/health
