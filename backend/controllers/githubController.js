@@ -95,8 +95,11 @@ const MOCK_REPOS = [
  */
 const getActivePRs = async (req, res) => {
   try {
+    // Debug logging for environment variable
+    console.log('🔍 [GitHub] GITHUB_ORG_NAME:', GITHUB_ORG || 'NOT SET');
+
     // Validate environment variables
-    if (!process.env.GITHUB_TOKEN || !GITHUB_ORG) {
+    if (!process.env.GITHUB_TOKEN) {
       console.warn('⚠️  GitHub credentials not configured. Using mock data.');
       return res.status(200).json({
         success: true,
@@ -106,11 +109,65 @@ const getActivePRs = async (req, res) => {
       });
     }
 
-    // Fetch all repositories in the organization
-    const { data: repos } = await octokit.repos.listForOrg({
-      org: GITHUB_ORG,
-      per_page: 100
-    });
+    let repos = [];
+    let fetchMethod = 'unknown';
+    let ownerName = GITHUB_ORG;
+
+    // Strategy 1: Try fetching as Organization (if GITHUB_ORG is set)
+    if (GITHUB_ORG) {
+      try {
+        console.log(`📦 [GitHub] Attempting to fetch repos for ORGANIZATION: ${GITHUB_ORG}`);
+        const response = await octokit.repos.listForOrg({
+          org: GITHUB_ORG,
+          per_page: 100
+        });
+        repos = response.data;
+        fetchMethod = 'organization';
+        console.log(`✅ [GitHub] Successfully fetched ${repos.length} repos from organization`);
+      } catch (orgError) {
+        console.warn(`⚠️  [GitHub] Organization fetch failed (${orgError.status}): ${orgError.message}`);
+        
+        // Strategy 2: Fallback to User if org fetch returns 404
+        if (orgError.status === 404) {
+          try {
+            console.log(`👤 [GitHub] Attempting to fetch repos for USER: ${GITHUB_ORG}`);
+            const response = await octokit.repos.listForUser({
+              username: GITHUB_ORG,
+              per_page: 100
+            });
+            repos = response.data;
+            fetchMethod = 'user';
+            ownerName = GITHUB_ORG;
+            console.log(`✅ [GitHub] Successfully fetched ${repos.length} repos from user`);
+          } catch (userError) {
+            console.error(`❌ [GitHub] User fetch also failed: ${userError.message}`);
+            throw userError;
+          }
+        } else {
+          throw orgError;
+        }
+      }
+    }
+
+    // Strategy 3: Final fallback - Fetch authenticated user's repos
+    if (repos.length === 0) {
+      try {
+        console.log(`🔐 [GitHub] Attempting to fetch repos for AUTHENTICATED USER`);
+        const response = await octokit.repos.listForAuthenticatedUser({
+          per_page: 100,
+          affiliation: 'owner,collaborator'
+        });
+        repos = response.data;
+        fetchMethod = 'authenticated-user';
+        // Get authenticated user's login name
+        const { data: user } = await octokit.users.getAuthenticated();
+        ownerName = user.login;
+        console.log(`✅ [GitHub] Successfully fetched ${repos.length} repos from authenticated user: ${ownerName}`);
+      } catch (authError) {
+        console.error(`❌ [GitHub] Authenticated user fetch failed: ${authError.message}`);
+        throw authError;
+      }
+    }
 
     // Fetch open PRs for each repository
     const allPRs = [];
@@ -118,7 +175,7 @@ const getActivePRs = async (req, res) => {
     for (const repo of repos) {
       try {
         const { data: prs } = await octokit.pulls.list({
-          owner: GITHUB_ORG,
+          owner: ownerName,
           repo: repo.name,
           state: 'open',
           per_page: 100
@@ -137,7 +194,7 @@ const getActivePRs = async (req, res) => {
           head: {
             ref: pr.head.ref,
             repo: {
-              clone_url: pr.head.repo?.clone_url || `https://github.com/${GITHUB_ORG}/${repo.name}.git`
+              clone_url: pr.head.repo?.clone_url || `https://github.com/${ownerName}/${repo.name}.git`
             }
           }
         }));
@@ -176,9 +233,13 @@ const getActivePRs = async (req, res) => {
  */
 const getAllRepos = async (req, res) => {
   try {
+    // Debug logging for environment variable
+    console.log('🔍 [GitHub] GITHUB_ORG_NAME:', GITHUB_ORG || 'NOT SET');
+    console.log('🔍 [GitHub] GITHUB_TOKEN:', process.env.GITHUB_TOKEN ? 'SET (length: ' + process.env.GITHUB_TOKEN.length + ')' : 'NOT SET');
+
     // Validate environment variables
-    if (!process.env.GITHUB_TOKEN || !GITHUB_ORG) {
-      console.warn('⚠️  GitHub credentials not configured. Using mock data.');
+    if (!process.env.GITHUB_TOKEN) {
+      console.warn('⚠️  GitHub token not configured. Using mock data.');
       return res.status(200).json({
         success: true,
         source: 'mock',
@@ -187,34 +248,92 @@ const getAllRepos = async (req, res) => {
       });
     }
 
-    // Fetch all repositories in the organization
-    const { data: repos } = await octokit.repos.listForOrg({
-      org: GITHUB_ORG,
-      type: 'all',
-      per_page: 100,
-      sort: 'updated',
-      direction: 'desc'
-    });
+    let repos = [];
+    let fetchMethod = 'unknown';
+
+    // Strategy 1: Try fetching as Organization (if GITHUB_ORG is set)
+    if (GITHUB_ORG) {
+      try {
+        console.log(`📦 [GitHub] Attempting to fetch repos for ORGANIZATION: ${GITHUB_ORG}`);
+        const response = await octokit.repos.listForOrg({
+          org: GITHUB_ORG,
+          type: 'all',
+          per_page: 100,
+          sort: 'updated',
+          direction: 'desc'
+        });
+        repos = response.data;
+        fetchMethod = 'organization';
+        console.log(`✅ [GitHub] Successfully fetched ${repos.length} repos from organization: ${GITHUB_ORG}`);
+      } catch (orgError) {
+        console.warn(`⚠️  [GitHub] Organization fetch failed (${orgError.status}): ${orgError.message}`);
+        
+        // Strategy 2: Fallback to User if org fetch returns 404
+        if (orgError.status === 404) {
+          try {
+            console.log(`👤 [GitHub] Attempting to fetch repos for USER: ${GITHUB_ORG}`);
+            const response = await octokit.repos.listForUser({
+              username: GITHUB_ORG,
+              type: 'all',
+              per_page: 100,
+              sort: 'updated',
+              direction: 'desc'
+            });
+            repos = response.data;
+            fetchMethod = 'user';
+            console.log(`✅ [GitHub] Successfully fetched ${repos.length} repos from user: ${GITHUB_ORG}`);
+          } catch (userError) {
+            console.error(`❌ [GitHub] User fetch also failed (${userError.status}): ${userError.message}`);
+            throw userError; // Throw to trigger Strategy 3
+          }
+        } else {
+          throw orgError; // Throw non-404 errors to trigger Strategy 3
+        }
+      }
+    }
+
+    // Strategy 3: Final fallback - Fetch authenticated user's repos
+    if (repos.length === 0) {
+      try {
+        console.log(`🔐 [GitHub] Attempting to fetch repos for AUTHENTICATED USER`);
+        const response = await octokit.repos.listForAuthenticatedUser({
+          type: 'all',
+          per_page: 100,
+          sort: 'updated',
+          direction: 'desc',
+          affiliation: 'owner,collaborator'
+        });
+        repos = response.data;
+        fetchMethod = 'authenticated-user';
+        console.log(`✅ [GitHub] Successfully fetched ${repos.length} repos from authenticated user`);
+      } catch (authError) {
+        console.error(`❌ [GitHub] Authenticated user fetch failed: ${authError.message}`);
+        throw authError;
+      }
+    }
 
     // Transform repository data
     const transformedRepos = repos.map(repo => ({
       name: repo.name,
       url: repo.html_url,
       lastUpdated: repo.updated_at,
-      language: repo.language || 'N/A'
+      language: repo.language || 'N/A',
+      owner: repo.owner?.login || 'unknown'
     }));
 
     res.status(200).json({
       success: true,
       source: 'github',
+      fetchMethod: fetchMethod,
       count: transformedRepos.length,
       data: transformedRepos
     });
 
   } catch (error) {
-    console.error('❌ Error fetching repositories from GitHub:', error.message);
+    console.error('❌ [GitHub] All repository fetch strategies failed:', error.message);
+    console.error('📄 [GitHub] Full error:', error);
     
-    // Return mock data if API fails
+    // Return mock data if all API attempts fail
     return res.status(200).json({
       success: true,
       source: 'mock',
@@ -291,25 +410,57 @@ const getBranches = async (req, res) => {
  */
 const checkGitHubHealth = async (req, res) => {
   try {
-    if (!process.env.GITHUB_TOKEN || !GITHUB_ORG) {
+    console.log('🔍 [GitHub Health] GITHUB_ORG_NAME:', GITHUB_ORG || 'NOT SET');
+
+    if (!process.env.GITHUB_TOKEN) {
       return res.status(200).json({
         success: false,
         configured: false,
-        message: 'GitHub credentials not configured in .env file'
+        message: 'GitHub token not configured in .env file'
       });
     }
 
-    // Test API connection by fetching org info
-    await octokit.orgs.get({ org: GITHUB_ORG });
+    // Test API connection by fetching authenticated user
+    const { data: user } = await octokit.users.getAuthenticated();
+    console.log(`✅ [GitHub Health] Authenticated as: ${user.login}`);
+
+    let accountType = 'unknown';
+    let accountName = GITHUB_ORG || user.login;
+
+    // Try to determine if GITHUB_ORG_NAME is an org or user
+    if (GITHUB_ORG) {
+      try {
+        await octokit.orgs.get({ org: GITHUB_ORG });
+        accountType = 'organization';
+        console.log(`✅ [GitHub Health] ${GITHUB_ORG} is an ORGANIZATION`);
+      } catch (orgError) {
+        if (orgError.status === 404) {
+          try {
+            await octokit.users.getByUsername({ username: GITHUB_ORG });
+            accountType = 'user';
+            console.log(`✅ [GitHub Health] ${GITHUB_ORG} is a USER`);
+          } catch (userError) {
+            accountType = 'invalid';
+            console.error(`❌ [GitHub Health] ${GITHUB_ORG} is neither an org nor a user`);
+          }
+        }
+      }
+    } else {
+      accountType = 'authenticated-user';
+      accountName = user.login;
+    }
 
     res.status(200).json({
       success: true,
       configured: true,
-      organization: GITHUB_ORG,
-      message: 'GitHub API connection successful'
+      authenticatedUser: user.login,
+      accountType: accountType,
+      accountName: accountName,
+      message: `GitHub API connection successful. Account type: ${accountType}`
     });
 
   } catch (error) {
+    console.error('❌ [GitHub Health] Connection failed:', error.message);
     res.status(200).json({
       success: false,
       configured: true,
