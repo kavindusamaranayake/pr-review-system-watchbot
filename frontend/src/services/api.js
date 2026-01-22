@@ -1,6 +1,12 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:3000/api';
+// API Base URL Configuration for Vercel Deployment
+// In production (Vercel), use relative path with /api prefix (handled by vercel.json rewrites)
+// In development, use localhost backend server
+const API_BASE_URL = import.meta.env.VITE_API_URL || 
+  (import.meta.env.MODE === 'production' ? '/api' : 'http://localhost:3000/api');
+
+console.log('API Base URL:', API_BASE_URL, 'Mode:', import.meta.env.MODE);
 
 // Create axios instance with default config
 const api = axios.create({

@@ -1,0 +1,12 @@
+# Vercel Ignore File
+# Add files/folders to ignore during Vercel build
+
+# Don't build if only these files change
+README.md
+*.md
+.vscode/
+.idea/
+
+# Temporary files
+temp_submissions/
+*.log
