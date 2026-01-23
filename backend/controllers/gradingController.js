@@ -36,6 +36,35 @@ async function gradeSubmission(req, res) {
       });
     }
     
+    // Step 1.5: Check if this submission was already graded (to prevent wasting OpenAI credits)
+    console.log('[GradingController] Checking if submission was already graded...');
+    const existingReview = await checkExistingReview(repoUrl, branchName, studentName);
+    
+    if (existingReview) {
+      console.log(`[GradingController] Found existing review (ID: ${existingReview.id})`);
+      console.log('[GradingController] Returning cached review (no OpenAI call needed)');
+      
+      // Parse the stored review content
+      const parsedContent = JSON.parse(existingReview.reviewContent);
+      
+      // Return the existing review with alreadyGraded flag
+      return res.status(200).json({
+        success: true,
+        alreadyGraded: true,
+        student: existingReview.studentName || 'Unknown',
+        branch: existingReview.branchName,
+        repositoryUrl: existingReview.repoName,
+        results: parsedContent.results,
+        summary: parsedContent.summary,
+        reviewId: existingReview.id,
+        savedAt: existingReview.createdAt,
+        timestamp: existingReview.createdAt,
+        message: 'This submission was already graded. Returning existing review.'
+      });
+    }
+    
+    console.log('[GradingController] No existing review found. Proceeding with new grading...');
+    
     // Step 2: Clone the repository with specific branch
     console.log('[GradingController] Cloning repository...');
     const submitterName = studentName || 'submission';
@@ -141,6 +170,49 @@ function validateRequestData(repoUrl, branchName, customInstructions) {
   
   return null;
 }
+
+/**
+ * Checks if a review already exists for the given submission
+ * This prevents wasting OpenAI credits by re-grading the same submission
+ * @param {string} repoName - Repository URL/name
+ * @param {string} branchName - Branch name
+ * @param {string|null} studentName - Student name (optional)
+ * @returns {Promise<Object|null>} - Existing review or null if not found
+ */
+async function checkExistingReview(repoName, branchName, studentName) {
+  try {
+    // Build the query conditions
+    const whereClause = {
+      repoName: repoName,
+      branchName: branchName
+    };
+    
+    // If studentName is provided, include it in the search
+    // If not provided, search for reviews with null studentName
+    if (studentName) {
+      whereClause.studentName = studentName;
+    } else {
+      whereClause.studentName = null;
+    }
+    
+    // Search for an existing review
+    const existingReview = await prisma.review.findFirst({
+      where: whereClause,
+      orderBy: {
+        createdAt: 'desc' // Get the most recent review if multiple exist
+      }
+    });
+    
+    return existingReview;
+    
+  } catch (error) {
+    console.error('[GradingController] Error checking existing review:', error);
+    // If there's an error checking the database, return null to proceed with grading
+    // This ensures the service continues to work even if DB check fails
+    return null;
+  }
+}
+
 
 /**
  * Performs custom AI-based grading using instructor-provided rules
