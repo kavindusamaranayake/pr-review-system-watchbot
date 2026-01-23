@@ -3,6 +3,13 @@ const router = express.Router();
 const reviewController = require('../controllers/reviewController');
 
 /**
+ * @route   GET /api/reviews/all
+ * @desc    Get all reviews ordered by creation date
+ * @access  Public (add authentication later if needed)
+ */
+router.get('/all', reviewController.getAllReviews);
+
+/**
  * @route   GET /api/reviews
  * @desc    Get all pending reviews
  * @access  Public (add authentication later if needed)

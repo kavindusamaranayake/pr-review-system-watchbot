@@ -3,6 +3,9 @@
  * Handles HTTP requests for automated grading submissions
  */
 
+const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
+
 const { cloneRepo, cleanupRepo, isValidGitHubUrl } = require('../grading-engine/cloner');
 const module02Handler = require('../grading-engine/module-handlers/module02');
 
@@ -57,6 +60,27 @@ async function gradeSubmission(req, res) {
       },
       timestamp: new Date().toISOString()
     };
+    
+    // Step 4.5: Save the review to the database
+    try {
+      const savedReview = await prisma.review.create({
+        data: {
+          repoName: repoUrl,
+          branchName: branchName,
+          studentName: studentName || null,
+          reviewContent: JSON.stringify({
+            feedback: gradingResults.codeQuality?.feedback || 'No feedback available',
+            results: gradingResults,
+            summary: response.summary
+          }),
+          score: `${response.summary.totalScore}/${response.summary.maxScore}`,
+          status: 'PENDING'
+        }
+      });
+      response.reviewId = savedReview.id;
+    } catch (dbError) {
+      console.error(`[GradingController] Failed to save review to database: ${dbError.message}`);
+    }
     
     console.log(`[GradingController] Grading completed successfully`);
     console.log(`  Score: ${response.summary.totalScore}/${response.summary.maxScore} (${response.summary.percentage}%)`);

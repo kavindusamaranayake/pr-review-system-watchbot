@@ -12,10 +12,14 @@ datasource db {
 }
 
 model Review {
-  id              Int      @id @default(autoincrement())
-  prLink          String
+  id              String   @id @default(uuid())
+  prLink          String?
+  repoName        String
   branchName      String
-  feedbackContent String
+  studentName     String?
+  reviewContent   String   @db.Text
+  score           String?
+  feedbackContent String?
   status          String   @default("PENDING")
   createdAt       DateTime @default(now())
 }

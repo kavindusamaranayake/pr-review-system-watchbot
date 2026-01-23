@@ -4,6 +4,33 @@ const { Octokit } = require('@octokit/rest');
 const prisma = new PrismaClient();
 
 /**
+ * Get all reviews ordered by creation date
+ * @route GET /api/reviews/all
+ */
+exports.getAllReviews = async (req, res) => {
+  try {
+    const reviews = await prisma.review.findMany({
+      orderBy: {
+        createdAt: 'desc'
+      }
+    });
+
+    res.status(200).json({
+      success: true,
+      count: reviews.length,
+      data: reviews
+    });
+  } catch (error) {
+    console.error('Error fetching all reviews:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch reviews',
+      message: error.message
+    });
+  }
+};
+
+/**
  * Get reviews with optional status filter
  * @route GET /api/reviews?status=all|PENDING|APPROVED|REJECTED
  */
