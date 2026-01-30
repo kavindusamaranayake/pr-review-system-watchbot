@@ -1,47 +1,61 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
-import { auth, googleProvider } from '../firebase';
-import { Mail, Lock, Chrome } from 'lucide-react';
-import metanaLogo from '../assets/images.png';
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import {
+  signInWithPopup,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+} from "firebase/auth";
+import { auth, googleProvider } from "../firebase";
+import { Mail, Lock, Chrome } from "lucide-react";
+import metanaLogo from "../assets/images.png";
 
 // List of instructor emails with full dashboard access
 const INSTRUCTOR_EMAILS = [
-  'karindra@gmail.com',
-  'thinal@metana.io',
+  "karindra@gmail.com",
+  "thinal@metana.io",
   // Add more instructor emails here
 ];
 
 function Login() {
   const navigate = useNavigate();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   // Check if user is an instructor
   const isInstructor = (userEmail) => {
-    return INSTRUCTOR_EMAILS.includes(userEmail.toLowerCase());
+    const lowerEmail = userEmail.toLowerCase();
+    // Check if email is in hardcoded list OR has @metana.io domain
+    return (
+      INSTRUCTOR_EMAILS.includes(lowerEmail) ||
+      lowerEmail.endsWith("@metana.io")
+    );
   };
 
   // Handle role-based redirect
   const handlePostLogin = (user) => {
     // Store user in localStorage
-    localStorage.setItem('user', JSON.stringify({
-      email: user.email,
-      displayName: user.displayName,
-      photoURL: user.photoURL,
-      uid: user.uid,
-      role: isInstructor(user.email) ? 'instructor' : 'student',
-    }));
+    localStorage.setItem(
+      "user",
+      JSON.stringify({
+        email: user.email,
+        displayName: user.displayName,
+        photoURL: user.photoURL,
+        uid: user.uid,
+        role: isInstructor(user.email) ? "instructor" : "student",
+      }),
+    );
 
     // Redirect based on role
     if (isInstructor(user.email)) {
-      console.log('✅ Instructor login detected, redirecting to /dashboard');
-      navigate('/dashboard');
+      console.log("✅ Instructor login detected, redirecting to /dashboard");
+      navigate("/dashboard");
     } else {
-      console.log('✅ Student login detected, redirecting to /student-dashboard');
-      navigate('/student-dashboard');
+      console.log(
+        "✅ Student login detected, redirecting to /student-dashboard",
+      );
+      navigate("/student-dashboard");
     }
   };
 
@@ -49,12 +63,12 @@ function Login() {
   const handleGoogleLogin = async () => {
     try {
       setLoading(true);
-      setError('');
+      setError("");
       const result = await signInWithPopup(auth, googleProvider);
       handlePostLogin(result.user);
     } catch (err) {
-      console.error('Google login error:', err);
-      setError(err.message || 'Failed to sign in with Google');
+      console.error("Google login error:", err);
+      setError(err.message || "Failed to sign in with Google");
     } finally {
       setLoading(false);
     }
@@ -63,40 +77,44 @@ function Login() {
   // Email/Password Sign In (with auto sign-up)
   const handleEmailLogin = async (e) => {
     e.preventDefault();
-    
+
     if (!email || !password) {
-      setError('Please fill in all fields');
+      setError("Please fill in all fields");
       return;
     }
 
     try {
       setLoading(true);
-      setError('');
-      
+      setError("");
+
       // Try to sign in first
       try {
         const result = await signInWithEmailAndPassword(auth, email, password);
         handlePostLogin(result.user);
       } catch (signInError) {
         // If user doesn't exist (auth/user-not-found), create account
-        if (signInError.code === 'auth/user-not-found') {
-          console.log('User not found, creating new account...');
-          const result = await createUserWithEmailAndPassword(auth, email, password);
+        if (signInError.code === "auth/user-not-found") {
+          console.log("User not found, creating new account...");
+          const result = await createUserWithEmailAndPassword(
+            auth,
+            email,
+            password,
+          );
           handlePostLogin(result.user);
         } else {
           throw signInError;
         }
       }
     } catch (err) {
-      console.error('Email login error:', err);
-      if (err.code === 'auth/wrong-password') {
-        setError('Invalid password');
-      } else if (err.code === 'auth/invalid-email') {
-        setError('Invalid email address');
-      } else if (err.code === 'auth/weak-password') {
-        setError('Password should be at least 6 characters');
+      console.error("Email login error:", err);
+      if (err.code === "auth/wrong-password") {
+        setError("Invalid password");
+      } else if (err.code === "auth/invalid-email") {
+        setError("Invalid email address");
+      } else if (err.code === "auth/weak-password") {
+        setError("Password should be at least 6 characters");
       } else {
-        setError(err.message || 'Failed to sign in');
+        setError(err.message || "Failed to sign in");
       }
     } finally {
       setLoading(false);
@@ -118,11 +136,12 @@ function Login() {
         <div className="space-y-6">
           <div className="space-y-4">
             <div className="text-4xl font-bold text-gray-800 leading-tight">
-              "What makes Metana different is how{' '}
+              "What makes Metana different is how{" "}
               <span className="text-yellow-600">hands-on</span> it is..."
             </div>
             <p className="text-lg text-gray-600">
-              Experience personalized learning with industry experts and build real-world projects.
+              Experience personalized learning with industry experts and build
+              real-world projects.
             </p>
           </div>
 
@@ -141,9 +160,30 @@ function Login() {
         {/* Decorative Elements */}
         <div className="opacity-10">
           <svg className="w-32 h-32" viewBox="0 0 200 200" fill="none">
-            <circle cx="100" cy="100" r="80" stroke="currentColor" strokeWidth="2" className="text-yellow-600" />
-            <circle cx="100" cy="100" r="60" stroke="currentColor" strokeWidth="2" className="text-green-600" />
-            <circle cx="100" cy="100" r="40" stroke="currentColor" strokeWidth="2" className="text-yellow-600" />
+            <circle
+              cx="100"
+              cy="100"
+              r="80"
+              stroke="currentColor"
+              strokeWidth="2"
+              className="text-yellow-600"
+            />
+            <circle
+              cx="100"
+              cy="100"
+              r="60"
+              stroke="currentColor"
+              strokeWidth="2"
+              className="text-green-600"
+            />
+            <circle
+              cx="100"
+              cy="100"
+              r="40"
+              stroke="currentColor"
+              strokeWidth="2"
+              className="text-yellow-600"
+            />
           </svg>
         </div>
       </div>
@@ -161,10 +201,12 @@ function Login() {
           {/* Header */}
           <div className="text-center space-y-2">
             <h1 className="text-3xl font-bold text-gray-900">
-              Welcome to <span className="relative inline-block">
+              Welcome to{" "}
+              <span className="relative inline-block">
                 <span className="relative z-10">Metana</span>
                 <span className="absolute bottom-1 left-0 w-full h-2 bg-[#ccf621] -z-10"></span>
-              </span>!
+              </span>
+              !
             </h1>
             <p className="text-gray-600">Let's sign in to your account</p>
           </div>
@@ -180,7 +222,10 @@ function Login() {
           <form onSubmit={handleEmailLogin} className="space-y-5">
             {/* Email Input */}
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+              <label
+                htmlFor="email"
+                className="block text-sm font-medium text-gray-700 mb-2"
+              >
                 Email Address
               </label>
               <div className="relative">
@@ -199,7 +244,10 @@ function Login() {
 
             {/* Password Input */}
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+              <label
+                htmlFor="password"
+                className="block text-sm font-medium text-gray-700 mb-2"
+              >
                 Password
               </label>
               <div className="relative">
@@ -238,7 +286,7 @@ function Login() {
                   <span>Signing in...</span>
                 </div>
               ) : (
-                'Login'
+                "Login"
               )}
             </button>
           </form>
@@ -249,7 +297,9 @@ function Login() {
               <div className="w-full border-t border-gray-300"></div>
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-4 bg-white text-gray-500 font-medium">OR CONTINUE WITH</span>
+              <span className="px-4 bg-white text-gray-500 font-medium">
+                OR CONTINUE WITH
+              </span>
             </div>
           </div>
 
@@ -265,7 +315,7 @@ function Login() {
 
           {/* Sign Up Link */}
           <p className="text-center text-sm text-gray-600">
-            Don't have an account?{' '}
+            Don't have an account?{" "}
             <button
               type="button"
               className="text-yellow-600 hover:text-yellow-700 font-semibold"

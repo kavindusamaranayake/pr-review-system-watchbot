@@ -34,6 +34,12 @@ function Sidebar() {
       path: '/grading-assistant',
       icon: GraduationCap,
       description: 'Grade submissions'
+    },
+    {
+      name: 'PR-Watch-Bot',
+      path: '/pr-watchbot',
+      icon: GitPullRequest,
+      description: 'Create & manage repositories'
     }
   ];
 

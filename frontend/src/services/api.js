@@ -103,4 +103,37 @@ export const getAllRepos = async () => {
   }
 };
 
+/**
+ * Create a new repository via PR-Watch-Bot Cloudflare Worker
+ * @param {Object} payload - Repository creation payload
+ * @param {string} payload.repo - Repository name (format: bootcamp-cohort-username)
+ * @param {string[]} payload.codeowners - Array of codeowner usernames
+ * @param {string[]} payload.collaborators - Array of collaborator usernames
+ * @param {boolean} payload.enableWorkflow - Whether to install PR monitoring workflow
+ * @returns {Promise} Response from Cloudflare Worker
+ */
+export const createWatchBotRepo = async (payload) => {
+  const WATCHBOT_API_URL = import.meta.env.VITE_WATCHBOT_API_URL ||
+    'https://watch-bot-repo-creator.automations-3d6.workers.dev';
+
+  try {
+    const response = await fetch(WATCHBOT_API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error creating repository via Watch Bot:', error);
+    throw error;
+  }
+};
+
 export default api;

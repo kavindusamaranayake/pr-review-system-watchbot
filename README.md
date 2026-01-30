@@ -2,7 +2,7 @@
 
 ![Metana Logo](./frontend/src/pp/logo.png)
 
-#  Automated Pull Request Reviewer
+# Automated Pull Request Reviewer
 
 ### AI-Powered Code Review System with Instructor Gatekeeping
 
@@ -23,6 +23,7 @@
 The **Automated Pull Request Reviewer** is a full-stack DevOps solution designed to streamline the code review process for educational institutions and development teams. By leveraging **GitHub Webhooks**, **AI-powered analysis**, and a **professional Instructor Dashboard**, this system automatically reviews pull requests based on intelligent branch-naming conventions and provides instant feedback to developers.
 
 This tool bridges the gap between automated CI/CD pipelines and manual code review, offering:
+
 - ✅ **Real-time PR analysis** triggered by GitHub events
 - 🧠 **Smart branch-based review logic** (feature/, hotfix/, main)
 - 👨‍🏫 **Instructor gatekeeping** with approve/reject capabilities
@@ -36,18 +37,21 @@ Perfect for **DevOps bootcamps**, **code academies**, and **development teams** 
 ## ✨ Key Features
 
 ### 🤖 **AI-Powered Review Analysis**
+
 - Automatically analyzes code changes based on branch naming conventions
 - Detects new functions, tests, documentation, and code patterns
 - Provides detailed feedback with strengths, issues, and suggestions
 - Supports feature/, hotfix/, bugfix/, and custom branch types
 
 ### 🌿 **Intelligent Branch-Based Logic**
+
 - **Feature Branches**: Checks for tests, documentation, and proper implementation
 - **Hotfix Branches**: Enforces minimal changes (<100 lines) and focused fixes
 - **Main/Master Branches**: Blocks direct commits, enforces PR workflow
 - Custom severity levels: CRITICAL, MAJOR, MINOR, INFO
 
 ### 👨‍🏫 **Instructor Dashboard & Gatekeeping**
+
 - Clean, professional SaaS-style interface with dark/light themes
 - Review queue with pending PRs awaiting approval
 - One-click approve/reject actions with GitHub integration
@@ -55,6 +59,7 @@ Perfect for **DevOps bootcamps**, **code academies**, and **development teams** 
 - History modal showing complete audit trail
 
 ### 🔗 **Seamless GitHub Integration**
+
 - Webhook-based architecture for instant PR detection
 - Automatic comment posting on GitHub PRs
 - REQUEST_CHANGES event for rejected PRs (with fallback to COMMENT)
@@ -62,6 +67,7 @@ Perfect for **DevOps bootcamps**, **code academies**, and **development teams** 
 - Supports private repositories with token authentication
 
 ### 🎨 **Modern User Experience**
+
 - Responsive design with Tailwind CSS
 - Dark/light theme toggle with system preference detection
 - Glassmorphism UI elements and smooth animations
@@ -73,11 +79,13 @@ Perfect for **DevOps bootcamps**, **code academies**, and **development teams** 
 ## 📸 Interface Showcase
 
 ### 🌙 Dark Mode Dashboard
+
 The main instructor interface showing pending reviews, AI analysis, and action buttons.
 
 ![Dark Mode Dashboard](./frontend/src/pp/dark.png)
 
 ### ☀️ Light Mode & Landing Page
+
 Theme adaptability demonstration with professional light theme and welcoming landing page.
 
 <div align="center">
@@ -86,11 +94,13 @@ Theme adaptability demonstration with professional light theme and welcoming lan
 </div>
 
 ### ⛔ Rejection Workflow
+
 Demonstrates the instructor reject action with GitHub API integration for blocking merges.
 
 ![Rejection Logic](./frontend/src/pp/reject.png)
 
 ### 📋 Audit History Modal
+
 Complete history of all processed reviews with status badges and timestamps.
 
 ![History Modal](./frontend/src/pp/list.png)
@@ -100,6 +110,7 @@ Complete history of all processed reviews with status badges and timestamps.
 ## 🛠️ Tech Stack
 
 ### **Backend**
+
 - **Node.js** (v18.x) - JavaScript runtime
 - **Express.js** - RESTful API framework
 - **Prisma ORM** - Database management with migrations
@@ -108,12 +119,14 @@ Complete history of all processed reviews with status badges and timestamps.
 - **dotenv** - Environment variable management
 
 ### **Frontend**
+
 - **React** (v18.x) - UI component library
 - **Vite** - Fast build tool and dev server
 - **Tailwind CSS** - Utility-first CSS framework
 - **Axios** - HTTP client for API calls
 
 ### **DevOps & Tools**
+
 - **Ngrok** - Secure tunneling for local webhook testing
 - **GitHub Webhooks** - Real-time PR event notifications
 - **Nodemon** - Auto-restart development server
@@ -124,12 +137,14 @@ Complete history of all processed reviews with status badges and timestamps.
 ## 🚀 Installation & Setup
 
 ### **Prerequisites**
+
 - Node.js v18.x or higher
 - npm or yarn package manager
 - GitHub account with a test repository
 - Ngrok account (free tier works)
 
 ### **1️⃣ Clone the Repository**
+
 ```bash
 git clone https://github.com/yourusername/metana-pr-reviewer.git
 cd metana-pr-reviewer
@@ -159,6 +174,7 @@ npm run dev
 **Backend should now be running on:** `http://localhost:3000`
 
 **Generate GitHub Token:**
+
 1. Go to GitHub Settings → Developer settings → Personal access tokens → Tokens (classic)
 2. Generate new token with `repo` scope (full control of private repositories)
 3. Copy the token and paste it in your `.env` file
@@ -202,6 +218,7 @@ ngrok http 3000
 6. Click **Add webhook**
 
 **Test the webhook:**
+
 - Open a new PR in your repository
 - Check the backend terminal for `Processing PR #X: opened`
 - Review should appear in the Dashboard at `http://localhost:5173/dashboard`
@@ -211,6 +228,7 @@ ngrok http 3000
 ## 📖 Usage Guide
 
 ### **For Developers (Students)**
+
 1. **Create a feature branch** following naming conventions:
    - `feature/add-login-page` - For new features
    - `hotfix/fix-critical-bug` - For urgent fixes
@@ -223,6 +241,7 @@ ngrok http 3000
 4. **Wait for instructor approval** - Your PR will be in "Pending" status
 
 ### **For Instructors**
+
 1. **Access the Dashboard** at `http://localhost:5173/dashboard`
 
 2. **Review pending PRs** in the left panel
@@ -236,6 +255,7 @@ ngrok http 3000
 5. **View history** by clicking the "Total Processed" card
 
 ### **API Endpoints**
+
 ```
 GET  /api/reviews          - Fetch pending reviews (default) or all (?status=all)
 POST /api/reviews/:id/approve - Approve a review and post to GitHub
@@ -288,6 +308,7 @@ metana-pr-reviewer/
 ## 🔧 Environment Variables
 
 ### **Backend (.env)**
+
 ```env
 GITHUB_TOKEN=your_github_personal_access_token
 DATABASE_URL=file:./dev.db
@@ -295,6 +316,7 @@ PORT=3000
 ```
 
 ### **Frontend (No .env needed)**
+
 API base URL is configured in `src/services/api.js` to `http://localhost:3000/api`
 
 ---
@@ -302,6 +324,7 @@ API base URL is configured in `src/services/api.js` to `http://localhost:3000/ap
 ## 🎓 Educational Value
 
 This project demonstrates mastery of:
+
 - ✅ **Full-stack development** (Node.js + React)
 - ✅ **RESTful API design** and implementation
 - ✅ **Database modeling** with Prisma ORM
@@ -314,14 +337,48 @@ This project demonstrates mastery of:
 
 ---
 
+## � Deployment to Vercel
+
+This project is **production-ready** and optimized for Vercel deployment!
+
+### **📚 Deployment Guides**
+
+Choose your preferred guide based on your experience level:
+
+1. **[QUICK_START.md](./QUICK_START.md)** - ⚡ 3-step deployment (5 minutes)
+2. **[DEPLOYMENT_CHECKLIST.md](./DEPLOYMENT_CHECKLIST.md)** - ✅ Step-by-step checklist
+3. **[VERCEL_DEPLOYMENT_GUIDE.md](./VERCEL_DEPLOYMENT_GUIDE.md)** - 📖 Comprehensive guide
+4. **[DEPLOYMENT_ARCHITECTURE.md](./DEPLOYMENT_ARCHITECTURE.md)** - 🏗️ Architecture & diagrams
+
+### **⚡ Quick Deploy**
+
+```bash
+# 1. Push to GitHub
+git add .
+git commit -m "Ready for deployment"
+git push origin main
+
+# 2. Deploy to Vercel
+# Visit: https://vercel.com/new
+# Import your repository
+# Click "Deploy"
+
+# 3. Add environment variables in Vercel Dashboard
+```
+
+**That's it!** Your app will be live at `https://your-app-name.vercel.app` 🎉
+
+---
+
 ## 📝 Future Enhancements
 
-- [ ] **User Authentication** - Multi-instructor support with roles
+- [x] **Vercel Deployment** - Production-ready with comprehensive guides
+- [x] **PostgreSQL Integration** - Supabase database via Vercel Storage
+- [x] **AI-Powered Grading** - OpenAI GPT-4 integration
+- [x] **Firebase Authentication** - Multi-instructor support
 - [ ] **Custom Review Rules** - Configurable review criteria per repository
 - [ ] **Slack/Discord Notifications** - Real-time alerts for new PRs
-- [ ] **Advanced AI Analysis** - Integration with OpenAI/Claude for deeper code insights
 - [ ] **Analytics Dashboard** - Charts showing review trends, approval rates, etc.
-- [ ] **Deployment Guide** - Docker containerization and cloud hosting instructions
 
 ---
 
