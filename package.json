@@ -1,0 +1,24 @@
+{
+  "name": "metana-pr-reviewer",
+  "version": "1.0.0",
+  "description": "AI-Powered Pull Request Reviewer with Grading System",
+  "private": true,
+  "scripts": {
+    "install:all": "npm install && cd frontend && npm install && cd ../backend && npm install",
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev:backend": "cd backend && npm run dev",
+    "build": "cd frontend && npm install && npm run build",
+    "start": "cd backend && npm start",
+    "vercel-build": "cd frontend && npm install && npm run build"
+  },
+  "keywords": [
+    "github",
+    "pr-review",
+    "ai",
+    "grading",
+    "devops"
+  ],
+  "author": "Kavindu Samaranayake",
+  "license": "ISC"
+}
