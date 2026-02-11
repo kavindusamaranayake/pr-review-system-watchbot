@@ -18,7 +18,7 @@ const PRWatchBot = () => {
   const [errors, setErrors] = useState({});
 
   // Bootcamp options
-  const bootcampOptions = ["fullstack", "solidity", "seca"];
+  const bootcampOptions = ["fullstack", "solidity", "seca", "rust"];
 
   // Predefined users for codeowners with real names
   const predefinedUsers = [
@@ -29,6 +29,7 @@ const PRWatchBot = () => {
     { username: "nigeljacob", realName: "Nigel Jacob" },
     { username: "AaronJE45", realName: "Aaron" },
     { username: "Prabhashan19", realName: "Prabashan" },
+    { username: "luishsr", realName: "Luis Soares" },
   ];
 
   const validateForm = () => {

@@ -20,21 +20,36 @@
 
 ## 🎯 Introduction
 
-The **Automated Pull Request Reviewer** is a full-stack DevOps solution designed to streamline the code review process for educational institutions and development teams. By leveraging **GitHub Webhooks**, **AI-powered analysis**, and a **professional Instructor Dashboard**, this system automatically reviews pull requests based on intelligent branch-naming conventions and provides instant feedback to developers.
+The **Automated Pull Request Reviewer** is a full-stack DevOps solution designed to streamline the code review process for educational institutions and development teams. By leveraging **GitHub Webhooks**, **AI-powered analysis**, **Automated Repository Setup**, and a **professional Instructor Dashboard**, this system provides end-to-end management from repository creation to pull request review.
 
-This tool bridges the gap between automated CI/CD pipelines and manual code review, offering:
+This comprehensive tool bridges the gap between manual repository setup, automated CI/CD pipelines, and intelligent code review, offering:
 
+- 🏗️ **Automated repository creation** with proper access controls and configurations
 - ✅ **Real-time PR analysis** triggered by GitHub events
 - 🧠 **Smart branch-based review logic** (feature/, hotfix/, main)
 - 👨‍🏫 **Instructor gatekeeping** with approve/reject capabilities
 - 🌐 **GitHub API integration** for automated status updates
 - 📊 **Comprehensive audit logging** with review history
+- 🚀 **PRWatchBot** for instant student repository provisioning
 
-Perfect for **DevOps bootcamps**, **code academies**, and **development teams** seeking to enforce best practices while maintaining human oversight.
+Perfect for **DevOps bootcamps**, **code academies**, and **development teams** seeking to enforce best practices while maintaining human oversight and streamlined repository management.
 
 ---
 
 ## ✨ Key Features
+
+### 🚀 **PRWatchBot - Automated Repository Setup**
+
+- **One-Click Repository Creation**: Instantly create student repositories with standardized naming
+- **Smart Configuration**: Automatically configure CODEOWNERS, collaborators, and permissions
+- **Bootcamp Integration**: Supports multiple bootcamp types (fullstack, solidity, seca)
+- **Cohort Management**: Organize repositories by cohort with consistent naming patterns
+- **Predefined Users**: Quick selection from instructor/mentor database
+- **Custom Collaborators**: Flexible addition of any GitHub username
+- **Automated Workflows**: PR monitoring workflows installed automatically
+- **Form Validation**: Ensures all required fields are properly filled
+- **Confirmation Modal**: Review all settings before submission
+- **Cloudflare Worker Backend**: Serverless API for repository creation
 
 ### 🤖 **AI-Powered Review Analysis**
 
@@ -227,6 +242,69 @@ ngrok http 3000
 
 ## 📖 Usage Guide
 
+### **For Instructors (Repository Setup)**
+
+#### 🚀 **PRWatchBot - Automated Repository Creation**
+
+The PRWatchBot feature streamlines the process of creating and configuring student repositories with proper access controls and automated PR monitoring.
+
+**Accessing PRWatchBot:**
+
+1. Navigate to `/pr-watch-bot` route in the application
+2. You'll see a clean form-based interface for repository setup
+
+**Repository Creation Process:**
+
+1. **Repository Details**
+   - Select the **Bootcamp** type (fullstack, solidity, seca)
+   - Enter the **Cohort** identifier (e.g., c01, c02, c03)
+   - Provide the **Student Name/Username**
+   - Preview: Repository will be created as `{bootcamp}-{cohort}-{username}`
+   - Example: `fullstack-c01-johndoe`
+
+2. **Configure Code Owners**
+   - Select from predefined instructors/mentors dropdown
+   - Available users include: Dhruvin Parikh, David Killen, Timothy Liu, Kavinesh, Nigel Jacob, Aaron, Prabashan
+   - Or manually add GitHub usernames
+   - Code owners will have review approval rights
+   - At least one code owner is required
+
+3. **Add Collaborators**
+   - Add student GitHub usernames as collaborators
+   - Collaborators will have push access to the repository
+   - Multiple collaborators can be added
+   - At least one collaborator is required
+
+4. **Submit & Create**
+   - Click "Create Repository" button
+   - Review the summary in the confirmation modal
+   - Confirm to trigger repository creation via Cloudflare Worker API
+   - Success notification displays on completion
+
+**Automated Features:**
+
+- ✅ Repository is created in the organization/account
+- ✅ CODEOWNERS file is automatically configured
+- ✅ Collaborators are added with appropriate permissions
+- ✅ PR monitoring workflow is automatically installed
+- ✅ Branch protection rules can be configured (optional)
+
+**API Integration:**
+
+- Backend: Cloudflare Worker endpoint at `watch-bot-repo-creator.automations-3d6.workers.dev`
+- Payload includes: repo name, codeowners array, collaborators array, workflow enablement flag
+- Supports both predefined users (with real names) and custom GitHub usernames
+
+**Use Case:**
+Perfect for bootcamp administrators and instructors who need to:
+
+- Quickly provision student repositories for each cohort
+- Ensure consistent repository naming conventions
+- Automatically configure access controls and code review requirements
+- Enable PR monitoring workflows from day one
+
+---
+
 ### **For Developers (Students)**
 
 1. **Create a feature branch** following naming conventions:
@@ -240,7 +318,7 @@ ngrok http 3000
 
 4. **Wait for instructor approval** - Your PR will be in "Pending" status
 
-### **For Instructors**
+### **For Instructors (PR Review Dashboard)**
 
 1. **Access the Dashboard** at `http://localhost:5173/dashboard`
 
@@ -256,12 +334,34 @@ ngrok http 3000
 
 ### **API Endpoints**
 
+**PR Review System:**
+
 ```
 GET  /api/reviews          - Fetch pending reviews (default) or all (?status=all)
 POST /api/reviews/:id/approve - Approve a review and post to GitHub
 POST /api/reviews/:id/reject  - Reject a review with GitHub REQUEST_CHANGES
 POST /webhook/github      - GitHub webhook endpoint (receives PR events)
 ```
+
+**PRWatchBot Repository Creation:**
+
+```
+POST https://watch-bot-repo-creator.automations-3d6.workers.dev
+Content-Type: application/json
+
+{
+  "repo": "bootcamp-cohort-username",
+  "codeowners": ["username1", "username2"],
+  "collaborators": ["student1", "student2"],
+  "enableWorkflow": true
+}
+```
+
+**Response:**
+
+- `200 OK`: Repository created successfully
+- `400 Bad Request`: Invalid payload or missing required fields
+- `500 Internal Server Error`: Repository creation failed
 
 ---
 
@@ -291,6 +391,7 @@ metana-pr-reviewer/
 │   ├── src/
 │   │   ├── components/
 │   │   │   ├── Dashboard.jsx          # Main instructor dashboard
+│   │   │   ├── PRWatchBot.jsx         # Repository creation tool
 │   │   │   ├── Home.jsx               # Landing page
 │   │   │   ├── HistoryModal.jsx       # Review history modal
 │   │   │   ├── ThemeToggle.jsx        # Dark/light theme switcher
@@ -329,11 +430,12 @@ This project demonstrates mastery of:
 - ✅ **RESTful API design** and implementation
 - ✅ **Database modeling** with Prisma ORM
 - ✅ **GitHub API integration** and webhook handling
-- ✅ **DevOps practices** (CI/CD simulation, code review automation)
-- ✅ **Modern frontend development** (React hooks, state management)
+- ✅ **Serverless architecture** (Cloudflare Workers for repository creation)
+- ✅ **DevOps practices** (CI/CD simulation, code review automation, repository provisioning)
+- ✅ **Modern frontend development** (React hooks, state management, form validation)
 - ✅ **Professional UI/UX design** (responsive, themed, accessible)
 - ✅ **Error handling** and graceful degradation
-- ✅ **Security considerations** (token management, validation)
+- ✅ **Security considerations** (token management, validation, access controls)
 
 ---
 
