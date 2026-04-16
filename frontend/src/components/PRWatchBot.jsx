@@ -30,7 +30,7 @@ const PRWatchBot = () => {
     { username: "AaronJE45", realName: "Aaron" },
     { username: "Prabhashan19", realName: "Prabashan" },
     { username: "vaporif", realName: "Dmytro Onypko" },
-    { username: "fsarah77", realName: "Sarah" },
+    { username: "fsarah77", realName: "Sarah" }, 
   ];
 
   const validateForm = () => {
